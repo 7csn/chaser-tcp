@@ -10,7 +10,7 @@ use chaser\stream\subscribers\ConnectedServerSubscriber;
  *
  * @package chaser\tcp
  *
- * @property TcpServerInterface $server
+ * @property TcpServer $server
  */
 class TcpServerSubscriber extends ConnectedServerSubscriber
 {

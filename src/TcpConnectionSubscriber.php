@@ -11,7 +11,7 @@ use chaser\stream\subscribers\ConnectionSubscriber;
  *
  * @package chaser\tcp
  *
- * @property TcpConnectionInterface $connection
+ * @property TcpConnection $connection
  */
 class TcpConnectionSubscriber extends ConnectionSubscriber
 {

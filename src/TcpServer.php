@@ -13,9 +13,14 @@ use chaser\stream\traits\ServerContext;
  * @property int $checkHeartbeatInterval
  * @property array<TcpConnection> $connections
  */
-class TcpServer extends ConnectedServer implements TcpServerInterface
+class TcpServer extends ConnectedServer
 {
     use ServerContext, TcpService;
+
+    /**
+     * 默认心跳（收到新的完整请求）检测时间间隔（秒）
+     */
+    public const CHECK_HEARTBEAT_INTERVAL = 10;
 
     /**
      * 常规配置
@@ -46,9 +51,9 @@ class TcpServer extends ConnectedServer implements TcpServerInterface
     /**
      * @inheritDoc
      */
-    public function connection($stream): TcpConnection
+    public function connection($socket): TcpConnection
     {
-        return new TcpConnection($this, $this->reactor, $stream);
+        return new TcpConnection($this, $this->reactor, $socket);
     }
 
     /**

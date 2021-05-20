@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace chaser\tcp;
 
 use chaser\stream\Connection as StreamConnection;
+use chaser\stream\interfaces\parts\NetworkAddressInterface;
 use chaser\stream\traits\NetworkAddress;
 
 /**
@@ -14,9 +15,14 @@ use chaser\stream\traits\NetworkAddress;
  *
  * @property int $heartbeatTimeout
  */
-class TcpConnection extends StreamConnection implements TcpConnectionInterface
+class TcpConnection extends StreamConnection implements NetworkAddressInterface
 {
     use NetworkAddress;
+
+    /**
+     * 默认心跳（收到新的完整请求）时间间隔上限（秒）
+     */
+    public const HEARTBEAT_TIMEOUT = 55;
 
     /**
      * 常规配置
