@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace chaser\tcp;
 
 use chaser\stream\Connection as StreamConnection;
-use chaser\stream\interfaces\parts\NetworkAddressInterface;
+use chaser\stream\interfaces\part\NetworkAddressInterface;
 use chaser\stream\traits\NetworkAddress;
+use chaser\tcp\subscriber\ConnectionSubscriber;
 
 /**
  * tcp 连接
  *
  * @package chaser\tcp
  *
- * @property int $heartbeatTimeout
+ * @property-read Server $server
+ *
+ * @property-read int $heartbeatTimeout
  */
-class TcpConnection extends StreamConnection implements NetworkAddressInterface
+class Connection extends StreamConnection implements NetworkAddressInterface
 {
     use NetworkAddress;
 
@@ -23,18 +26,6 @@ class TcpConnection extends StreamConnection implements NetworkAddressInterface
      * 默认心跳（收到新的完整请求）时间间隔上限（秒）
      */
     public const HEARTBEAT_TIMEOUT = 55;
-
-    /**
-     * 常规配置
-     *
-     * @var array
-     */
-    protected array $configurations = [
-        'readBufferSize' => self::READ_BUFFER_SIZE,
-        'maxRecvBufferSize' => self::MAX_REQUEST_BUFFER_SIZE,
-        'maxSendBufferSize' => self::MAX_RESPONSE_BUFFER_SIZE,
-        'heartbeatTimeout' => self::HEARTBEAT_TIMEOUT
-    ];
 
     /**
      * 心跳（收到新的完整请求）时间
@@ -48,15 +39,23 @@ class TcpConnection extends StreamConnection implements NetworkAddressInterface
      */
     public static function subscriber(): string
     {
-        return TcpConnectionSubscriber::class;
+        return ConnectionSubscriber::class;
     }
 
     /**
-     * 设置心跳（收到新的完整请求）时间
+     * @inheritDoc
+     */
+    public static function configurations(): array
+    {
+        return ['heartbeatTimeout' => self::HEARTBEAT_TIMEOUT] + parent::configurations();
+    }
+
+    /**
+     * 心跳（记录时间）
      *
      * @param int|null $time
      */
-    public function setHeartbeatTime(?int $time = null): void
+    public function heartbeat(int $time = null): void
     {
         $this->heartbeatTime = $time ?? time();
     }
@@ -66,13 +65,13 @@ class TcpConnection extends StreamConnection implements NetworkAddressInterface
      *
      * @param int|null $time
      */
-    public function heartbeatCheck(?int $time = null): void
+    public function heartbeatCheck(int $time = null): void
     {
         if ($time === null) {
             $time = time();
         }
-        if (!$this->heartbeatTime) {
-            $this->setHeartbeatTime($time);
+        if (empty($this->heartbeatTime)) {
+            $this->heartbeat($time);
         } elseif ($this->heartbeatTime + $this->heartbeatTimeout < $time) {
             $this->close();
         }
