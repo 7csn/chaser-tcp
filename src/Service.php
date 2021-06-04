@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace chaser\tcp\traits;
+namespace chaser\tcp;
 
 use chaser\stream\interfaces\part\ServiceInterface;
 
 /**
  * tcp 服务特征
  *
- * @package chaser\tcp\traits
+ * @package chaser\tcp
  *
  * @see ServiceInterface
  */

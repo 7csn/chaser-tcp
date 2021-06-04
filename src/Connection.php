@@ -7,7 +7,6 @@ namespace chaser\tcp;
 use chaser\stream\Connection as StreamConnection;
 use chaser\stream\interfaces\part\NetworkAddressInterface;
 use chaser\stream\traits\NetworkAddress;
-use chaser\tcp\subscriber\ConnectionSubscriber;
 
 /**
  * tcp 连接
@@ -32,15 +31,7 @@ class Connection extends StreamConnection implements NetworkAddressInterface
      *
      * @var int
      */
-    protected int $heartbeatTime;
-
-    /**
-     * @inheritDoc
-     */
-    public static function subscriber(): string
-    {
-        return ConnectionSubscriber::class;
-    }
+    protected int $heartbeatTime = 0;
 
     /**
      * @inheritDoc
@@ -51,29 +42,32 @@ class Connection extends StreamConnection implements NetworkAddressInterface
     }
 
     /**
-     * 心跳（记录时间）
+     * 心跳（收到新的完整请求）超时检测
      *
-     * @param int|null $time
+     * @param int $time
      */
-    public function heartbeat(int $time = null): void
+    public function heartbeatCheck(int $time): void
     {
-        $this->heartbeatTime = $time ?? time();
+        if ($this->heartbeatTime + $this->heartbeatTimeout < $time) {
+            $this->close();
+        }
     }
 
     /**
-     * 心跳（收到新的完整请求）超时检测
-     *
-     * @param int|null $time
+     * @inheritDoc
      */
-    public function heartbeatCheck(int $time = null): void
+    protected function dispatchEstablish(): void
     {
-        if ($time === null) {
-            $time = time();
-        }
-        if (empty($this->heartbeatTime)) {
-            $this->heartbeat($time);
-        } elseif ($this->heartbeatTime + $this->heartbeatTimeout < $time) {
-            $this->close();
-        }
+        $this->heartbeatTime = time();
+        parent::dispatchEstablish();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function dispatchMessage(mixed $message): void
+    {
+        $this->heartbeatTime = time();
+        parent::dispatchMessage($message);
     }
 }

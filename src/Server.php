@@ -6,8 +6,6 @@ namespace chaser\tcp;
 
 use chaser\stream\ConnectedServer;
 use chaser\stream\traits\ServerContext;
-use chaser\tcp\subscriber\ServerSubscriber;
-use chaser\tcp\traits\Service;
 
 /**
  * tcp 服务器
@@ -32,15 +30,7 @@ class Server extends ConnectedServer
      *
      * @var bool
      */
-    protected bool $heartbeatMonitoring = false;
-
-    /**
-     * @inheritDoc
-     */
-    public static function subscriber(): string
-    {
-        return ServerSubscriber::class;
-    }
+    private int $heartbeatMonitorId;
 
     /**
      * @inheritDoc
@@ -48,22 +38,6 @@ class Server extends ConnectedServer
     public static function configurations(): array
     {
         return ['checkHeartbeatInterval' => self::CHECK_HEARTBEAT_INTERVAL] + parent::configurations();
-    }
-
-    /**
-     * 心跳监测
-     */
-    public function monitorHeartbeat(): void
-    {
-        if (!$this->heartbeatMonitoring) {
-            $this->heartbeatMonitoring = true;
-            $this->reactor->addInterval($this->checkHeartbeatInterval, function () {
-                $now = time();
-                foreach ($this->connections as $connection) {
-                    $connection->heartbeatCheck($now);
-                }
-            });
-        }
     }
 
     /**
@@ -75,11 +49,52 @@ class Server extends ConnectedServer
     }
 
     /**
-     * 套接字资源处理
+     * @inheritDoc
      */
-    protected function socketHandle(): void
+    protected function run(): void
     {
-        parent::socketHandle();
+        $this->monitorHeartbeat();
+        parent::run();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function close(): void
+    {
+        $this->delHeartbeatMonitor();
+        parent::close();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function configureSocket(): void
+    {
         $this->socketSettings();
+        parent::configureSocket();
+    }
+
+    /**
+     * 监测心跳
+     */
+    private function monitorHeartbeat(): void
+    {
+        $this->heartbeatMonitorId = $this->reactor->addInterval($this->checkHeartbeatInterval, function () {
+            $now = time();
+            foreach ($this->connections as $connection) {
+                $connection->heartbeatCheck($now);
+            }
+        });
+    }
+
+    /**
+     * 移除心跳监测
+     */
+    private function delHeartbeatMonitor(): void
+    {
+        if (isset($this->monitorId)) {
+            $this->reactor->delInterval($this->heartbeatMonitorId);
+        }
     }
 }
