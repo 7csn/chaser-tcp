@@ -53,7 +53,7 @@ class Server extends ConnectedServer
     /**
      * 心跳监测
      */
-    public function heartbeatMonitoring(): void
+    public function monitorHeartbeat(): void
     {
         if (!$this->heartbeatMonitoring) {
             $this->heartbeatMonitoring = true;

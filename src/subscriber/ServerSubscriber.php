@@ -22,6 +22,6 @@ class ServerSubscriber extends ConnectedServerSubscriber
      */
     public function start(Start $event): void
     {
-        $this->server->heartbeatMonitoring();
+        $this->server->monitorHeartbeat();
     }
 }
