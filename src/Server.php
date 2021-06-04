@@ -51,10 +51,10 @@ class Server extends ConnectedServer
     /**
      * @inheritDoc
      */
-    protected function run(): void
+    protected function running(): void
     {
         $this->monitorHeartbeat();
-        parent::run();
+        parent::running();
     }
 
     /**
