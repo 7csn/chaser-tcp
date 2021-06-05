@@ -80,7 +80,7 @@ class Server extends ConnectedServer
      */
     private function monitorHeartbeat(): void
     {
-        $this->heartbeatMonitorId = $this->reactor->addInterval($this->checkHeartbeatInterval, function () {
+        $this->heartbeatMonitorId = $this->reactor->setInterval($this->checkHeartbeatInterval, function () {
             $now = time();
             foreach ($this->connections as $connection) {
                 $connection->heartbeatCheck($now);
