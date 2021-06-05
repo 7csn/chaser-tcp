@@ -28,7 +28,7 @@ class Server extends ConnectedServer
     /**
      * 心跳监测是否进行中
      *
-     * @var bool
+     * @var int
      */
     private int $heartbeatMonitorId;
 
@@ -93,7 +93,7 @@ class Server extends ConnectedServer
      */
     private function delHeartbeatMonitor(): void
     {
-        if (isset($this->monitorId)) {
+        if ($this->heartbeatMonitorId > 0) {
             $this->reactor->delInterval($this->heartbeatMonitorId);
         }
     }
