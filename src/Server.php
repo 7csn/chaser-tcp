@@ -43,6 +43,16 @@ class Server extends ConnectedServer
     /**
      * @inheritDoc
      */
+    protected function initCommon(): void
+    {
+        parent::initCommon();
+
+        $this->reusePort();
+    }
+
+    /**
+     * @inheritDoc
+     */
     protected function connection($socket): Connection
     {
         return new Connection($this->container, $this, $this->reactor, $socket);
