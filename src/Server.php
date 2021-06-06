@@ -14,6 +14,7 @@ use chaser\stream\traits\ServerContext;
  *
  * @property Connection[] $connections
  *
+ * @property-read int $heartbeatTimeout
  * @property-read int $checkHeartbeatInterval
  */
 class Server extends ConnectedServer
@@ -21,23 +22,32 @@ class Server extends ConnectedServer
     use ServerContext, Service;
 
     /**
+     * 默认心跳（收到新的完整请求）时间间隔上限（秒）
+     */
+    public const HEARTBEAT_TIMEOUT = 55;
+
+    /**
      * 默认心跳（收到新的完整请求）检测时间间隔（秒）
      */
     public const CHECK_HEARTBEAT_INTERVAL = 10;
 
     /**
-     * 心跳监测是否进行中
+     * 心电图 ID
      *
      * @var int
      */
-    private int $heartbeatMonitorId;
+    private int $ekgId = 0;
 
     /**
      * @inheritDoc
      */
     public static function configurations(): array
     {
-        return ['checkHeartbeatInterval' => self::CHECK_HEARTBEAT_INTERVAL] + parent::configurations();
+        return [
+                'heartbeatTimeout' => self::HEARTBEAT_TIMEOUT,
+                'checkHeartbeatInterval' => self::CHECK_HEARTBEAT_INTERVAL
+            ]
+            + parent::configurations();
     }
 
     /**
@@ -63,7 +73,7 @@ class Server extends ConnectedServer
      */
     protected function running(): void
     {
-        $this->monitorHeartbeat();
+        $this->onEkg();
         parent::running();
     }
 
@@ -72,7 +82,7 @@ class Server extends ConnectedServer
      */
     protected function close(): void
     {
-        $this->delHeartbeatMonitor();
+        $this->offEkg();
         parent::close();
     }
 
@@ -86,25 +96,27 @@ class Server extends ConnectedServer
     }
 
     /**
-     * 监测心跳
+     * 打开心电图
      */
-    private function monitorHeartbeat(): void
+    private function onEkg(): void
     {
-        $this->heartbeatMonitorId = $this->reactor->setInterval($this->checkHeartbeatInterval, function () {
+        $this->ekgId = $this->reactor->setInterval($this->checkHeartbeatInterval, function () {
             $now = time();
             foreach ($this->connections as $connection) {
-                $connection->heartbeatCheck($now);
+                if ($connection->heartbeatTime + $this->heartbeatTimeout < $now) {
+                    $connection->close();
+                }
             }
         });
     }
 
     /**
-     * 移除心跳监测
+     * 关闭心电图
      */
-    private function delHeartbeatMonitor(): void
+    private function offEkg(): void
     {
-        if ($this->heartbeatMonitorId > 0) {
-            $this->reactor->delInterval($this->heartbeatMonitorId);
+        if ($this->ekgId > 0) {
+            $this->reactor->delInterval($this->ekgId);
         }
     }
 }
